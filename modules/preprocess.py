@@ -61,6 +61,18 @@ def row_to_embedding(row, embeddings, embeddings_dim, tfidf_dict):
     return vector_sum / count
 
 
+def row_to_embedding(row, embeddings, embeddings_dim):
+    row = row[1]
+    count = 1e-5
+    row = row["text"]
+    vector_sum = np.zeros(embeddings_dim)
+    for word in row:
+        if word in embeddings:
+            count += 1
+            vector_sum += embeddings[word]
+    return vector_sum / count
+
+
 def fetch_embeddings_value(row):
     values = row.split(' ');
     vector = np.asarray(values[1:], "float32")
