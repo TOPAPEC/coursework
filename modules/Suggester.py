@@ -28,10 +28,21 @@ class Suggester:
         if suggest_output[0] == "oracle":
             ind = sample_ind[suggest_output[1]]
             self.last_suggest = Suggest(indices=ind, from_to="oracle")
-        elif suggest_output[0] == "relabeling":
+        elif suggest_output[0] == "labeling":
             ind = sample_ind[suggest_output[1]]
             labels = suggest_output[2]
-            self.last_suggest = Suggest(indices=ind, labels=labels, from_to="relabeling")
+            self.last_suggest = Suggest(indices=ind, labels=labels, from_to="labeling")
+
+    def train_suggest(self, suggest_algorithm: ActiveLearningBase, model: ModelWrap, apply: bool = False,
+                                sample_ratio=1):
+        num_of_elements = int(self.X_train.shape[0] * sample_ratio)
+        sample_ind = np.random.choice(self.X_train.shape[0], num_of_elements, replace=False)
+        logging.info(f"Looking at {num_of_elements} samples from train.")
+        suggest_output = \
+            suggest_algorithm.get_samples_for_labeling(model, self.X_train[sample_ind, :], self.y_train[sample_ind])
+        if suggest_output[0] == "relabeling":
+            pass
+
 
     # Suggest should be passed here, probably will make it an object
     def apply_last_suggest(self):
@@ -44,7 +55,7 @@ class Suggester:
             self.y_train = np.append(self.y_train, self.y_test[ind], axis=0)
             self.X_test = np.delete(self.X_test, ind, axis=0)
             self.y_test = np.delete(self.y_test, ind, axis=0)
-        elif self.last_suggest.from_to == "relabeling":
+        elif self.last_suggest.from_to == "labeling":
             ind = self.last_suggest.indices
             labels = self.last_suggest.labels
             self.X_train = np.append(self.X_train, self.X_test[ind], axis=0)

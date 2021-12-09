@@ -4,6 +4,3 @@ class ActiveLearningBase:
 
     def get_samples_for_labeling(self, model, X_test, y_test):
         pass
-
-    def evaluate_metrics(self) -> dict:
-        pass
