@@ -23,6 +23,7 @@ class LogReg(nn.Module):
 
 class LinearModelTorch(ModelWrap):
     def __init__(self, model, itr, random_seed=42):
+        super().__init__()
         self.random_seed = random_seed
         self.model = model
         self.last_loss = 0
@@ -60,7 +61,7 @@ class LinearModelTorch(ModelWrap):
         X = X.cpu().detach().numpy()
         y = y.cpu().detach().numpy()
 
-    def predict(self, X):
+    def predict(self, X, **predict_kwargs):
         X = torch.from_numpy(X)
         X = X.view(-1, 300)
         X = X.cpu()
@@ -70,7 +71,7 @@ class LinearModelTorch(ModelWrap):
         X = X.detach().numpy()
         return result.detach().numpy()
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, **predict_proba_kwargs):
         X = torch.from_numpy(X)
         X = X.view(-1, 300)
         X = X.cpu()

@@ -16,7 +16,7 @@ def _nearest_neighbours_to_entropy(nearest_neighbours: np.ndarray, min_bins: int
 def disputable_points(classifier: BaseEstimator, X: modALinput,
                                index: IndexFlatL2, n_nearest: int = 100,
                                n_instances: int = 1, random_tie_break: bool = False,
-                               **uncertainty_measure_kwargs):
+                               **disputable_points_kwargs):
     dist, ind = index.search(X, n_nearest)
     entropies = _nearest_neighbours_to_entropy(classifier.y_training[ind], np.unique(classifier.y_training).shape[0])
     if not random_tie_break:
@@ -28,7 +28,7 @@ def disputable_points(classifier: BaseEstimator, X: modALinput,
 def pseudolabeling(classifier: BaseEstimator, X: modALinput,
                               n_nearest: int = 100,
                               n_instances: int = 1, random_tie_break: bool = False,
-                              **uncertainty_measure_kwargs):
+                              **pseudolabeling_kwargs):
     y_proba = classifier.predict_proba(X)
     entropies = entropy(y_proba, axis=1)
     if not random_tie_break:
