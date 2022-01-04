@@ -1,3 +1,4 @@
+import numpy as np
 
 
 class ModelWrap:
@@ -5,14 +6,11 @@ class ModelWrap:
         self.model = None
         pass
 
-    def train(self, X, y) -> None:
+    def fit(self, X: np.ndarray, y: np.ndarray) -> 'ModelWrap':
         pass
 
-    def predict(self, X):
+    def predict(self, X: np.ndarray) -> np.ndarray:
         pass
 
-    def predict_proba(self, X):
-        pass
-
-    def get_last_loss(self) -> float:
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
         pass

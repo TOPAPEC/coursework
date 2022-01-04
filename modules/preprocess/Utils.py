@@ -97,7 +97,7 @@ def get_glove_reddit_embeddings():
     # Number of words - 1623397
     embeddings = {}
     tmp = []
-    with io.open("GloVe.Reddit.120B.300D.txt", "r", encoding='utf-8') as file:
+    with open("GloVe.Reddit.120B.300D.txt", "r", encoding='utf-8') as file:
         file.readline()
         for line in tqdm(file, total=1623397):
             tmp.append(line)
