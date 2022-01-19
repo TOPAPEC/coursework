@@ -7,7 +7,6 @@ import gensim
 from multiprocessing import Pool
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
-from tqdm.contrib.concurrent import thread_map
 from tqdm import tqdm
 from gensim.models.fasttext import load_facebook_vectors
 
@@ -153,3 +152,5 @@ def get_tfidf_dict(tfidf_matrix, names, dataset):
             tfidf_dict[labels[i]] = {}
         tfidf_dict[labels[i]][names[j]] = v
     return tfidf_dict
+
+

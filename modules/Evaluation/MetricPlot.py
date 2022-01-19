@@ -4,7 +4,7 @@ import matplotlib as mpl
 
 from typing import Tuple, List
 from matplotlib import pyplot as plt
-from modules.models import ModelWrap
+from modules.models.Wraps import ModelWrap
 from modAL.models import ActiveLearner
 from typing import Union
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score

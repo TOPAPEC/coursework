@@ -1,11 +1,11 @@
 import numpy as np
-from modules.ActiveLearning import ActiveLearningBase
 from faiss import IndexFlatL2
 from modAL.models.base import BaseEstimator
 from modAL.utils.data import modALinput
+from modAL.utils.selection import multi_argmax, shuffled_argmax
 from functools import partial
 from scipy.stats import entropy
-from modAL.utils.selection import multi_argmax, shuffled_argmax
+
 
 
 def _nearest_neighbours_to_entropy(nearest_neighbours: np.ndarray, min_bins: int):

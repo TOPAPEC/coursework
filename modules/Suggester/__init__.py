@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import faiss
 from modules.ActiveLearning import ActiveLearningBase
-from modules.models import ModelWrap
+from modules.models.Wraps import ModelWrap
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 

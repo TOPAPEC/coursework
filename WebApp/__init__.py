@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib as mpl
+import altair as alt
 
 from whatlies.transformers import Umap
 from matplotlib import pyplot as plt
@@ -13,16 +14,28 @@ mpl.style.use('fivethirtyeight')
 
 st.title('Coursework NLP short text')
 all_metrics = {}
-with open(r"C:\Users\TOPAPEC\repos\coursework\tmp\metric_dumps\benchmarking_samplings_logreg_metrics_ready.pkl", "rb") as file:
+with open(r"/tmp/metric_dumps/benchmarking_samplings_logreg_metrics_ready.pkl", "rb") as file:
     all_metrics = pickle.load(file)
+
 
 st.subheader("Dataset overview")
 st.write("Here you can see first 20 classes of dataset subsampled and projected on 2d plane using umap")
-with open(r"C:\Users\TOPAPEC\repos\coursework\tmp\dataset_dumps\embset_first_20_classes_dataset_streamlit.pkl", "rb") as file:
+with open(r"/tmp/dataset_dumps/umaped_dataset_first_20_classes_dataframe.pkl", "rb") as file:
     dataset_subsample = pickle.load(file)
-cols = st.columns((1, 4, 1))
+cols = st.columns((1, 14, 1))
 cols[0].write(" ")
-cols[1].write(dataset_subsample.transform(Umap(2, n_neighbors=400, min_dist=0.2)).plot_interactive(annot=False).properties(width=1000, height=1000, title=""))
+cols[1].write(alt.Chart(dataset_subsample).mark_point().encode(
+        alt.X("X"),
+        alt.Y("Y"),
+        alt.Color("subreddit"),
+        tooltip= [alt.Tooltip("subreddit"),
+        alt.Tooltip("title"),
+        alt.Tooltip("selftext")]
+    ).properties(
+        width=1600,
+        height=800
+    ).interactive())
+
 
 st.subheader("Sampling strategies effeciency")
 train_fractures_values = ["0.001", "0.005", "0.05", "0.1"]
