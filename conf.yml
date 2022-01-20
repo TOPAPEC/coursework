@@ -1,0 +1,13 @@
+sampling_model:
+  path: "InteractiveDependencies/model.py"
+#comitee_models:
+datasets:
+#  Пока что пул не должен встречать лейблов, отличных от трейна.
+  train_path: "InteractiveDependencies\\dataset_train.pkl"
+  val_path: "InteractiveDependencies\\dataset_val.pkl"
+  pool_path: "InteractiveDependencies\\dataset_pool.pkl"
+  target: "subreddit"
+  display: ["title", "selftext"]
+output:
+  train_path: "dataset_train_output.pkl"
+  pool_path: "dataset_train_output.pkl"
