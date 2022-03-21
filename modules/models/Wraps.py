@@ -23,7 +23,8 @@ class ModelWrap:
 
 
 class TorchClassifierWrap(ModelWrap, BaseEstimator):
-    def __init__(self, model : nn.Module, itr, input_dimension, batch_size, random_state=42, verbose=False):
+    def __init__(self, model: nn.Module, itr: int, input_dimension: int, batch_size: int, random_state: int = 42,
+                 verbose: bool = False):
         super().__init__()
         self.random_seed = random_state
         self.model = model

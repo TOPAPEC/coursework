@@ -1,5 +1,6 @@
 import pickle
 import random
+import logging
 from functools import partial
 import altair as alt
 import numpy as np
@@ -34,26 +35,10 @@ random.seed(random_state)
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 10)
 pd.set_option('display.width', None)
-pd.set_option('display.max_colwidth', -1)
+pd.set_option('display.max_colwidth', None)
 
 
 # Functions ------------------------------------------------------------------------------------------------------------
-
-# def import_dataset_sampled(num_samples: int = 100000):
-#     dataset = pd.read_csv("selfpost/rspct.tsv", sep="\t")
-#     le = LabelEncoder()
-#     vectorized_output_path = "selfpost/vectorized.npy"
-#     vectorized_labels_output_path = "selfpost/vectorized_labels.npy"
-#     with open(vectorized_output_path, "rb") as vect_X, open(vectorized_labels_output_path, "rb") as vect_y:
-#         X = np.load(vect_X, allow_pickle=True)
-#         y = np.load(vect_y, allow_pickle=True)
-#     assert (np.array(dataset["subreddit"][:100]) == y[:100]).all()
-#     y = le.fit_transform(y)
-#     sample_indices = np.random.choice(X.shape[0], num_samples, replace=False)
-#     X = X[sample_indices]
-#     y = y[sample_indices]
-#     return X, y, dataset.iloc[sample_indices, :], dict(zip(le.transform(le.classes_), le.classes_)), sample_indices
-
 
 def app_init():
     dataset_types = ["train", "val", "pool"]
@@ -112,11 +97,12 @@ def plot_dataset(id_to_centers, id_to_counts, classes, le, custom_colors=None):
 
 def cached_train(model, X, y, cache_keyword="model_train_cache", **model_kwargs):
     if (xxh128_hexdigest(X), xxh128_hexdigest(y)) == st.session_state.get(cache_keyword + "_hashes", ("", "")):
-        model.set_state(st.session_state[cache_keyword])
+        return pickle.loads(st.session_state[cache_keyword])
     else:
         model.fit(X, y, **model_kwargs)
-        st.session_state[cache_keyword] = model.get_state()
+        st.session_state[cache_keyword] = pickle.dumps(model)
         st.session_state[cache_keyword + "_hashes"] = (xxh128_hexdigest(X), xxh128_hexdigest(y))
+        return model
 
 
 @st.cache
@@ -126,16 +112,10 @@ def convert_df(df):
 
 # Global vars ----------------------------------------------------------------------------------------------------------
 
-samplings = ["Confidence", "Margin", "Entropy",
-             "Random", "Most Disputable points"]
-sampling_funcs = [uncertainty_sampling, margin_sampling, entropy_sampling, random_sampling, disputable_points]
-n_neighbours = 20
-min_dist = 0.8
-sampling_number_of_samples_variants = [500, 1000, 2000, 3000]
-sampling_max_number_of_samples_to_show = 500
 
 cols = st.columns((2, 10, 4))
 st.session_state["sampling_type_choice"] = cols[0].empty()
+st.session_state["committee_info_textbox"] = cols[0].empty()
 st.session_state["sampling_number_of_samples_choice"] = cols[0].empty()
 st.session_state["sampling_result_dataframe_column_slider"] = cols[0].empty()
 st.session_state["sampling_button"] = cols[0].empty()
@@ -147,18 +127,34 @@ st.session_state["dataset_count_above_main_plot"] = cols[1].empty()
 st.session_state["main_plot"] = cols[1].empty()
 st.session_state["sampling_result_dataframe"] = st.empty()
 
-
 with open("conf.yml", "r") as config_file:
     st.session_state["config"] = yaml.safe_load(config_file)
 
 # Main -----------------------------------------------------------------------------------------------------------------
 
 if "initialised" not in st.session_state:
+    st.session_state["samplings"] = ["Confidence", "Margin", "Entropy",
+                                     "Random", "Most Disputable points"]
+    st.session_state["sampling_funcs"] = [uncertainty_sampling, margin_sampling, entropy_sampling, random_sampling,
+                                          disputable_points]
+    st.session_state["n_neighbours"] = 20
+    st.session_state["min_dist"] = 0.8
+    st.session_state["sampling_number_of_samples_variants"] = [500, 1000, 2000, 3000]
+    st.session_state["sampling_max_number_of_samples_to_show"] = 500
+    logging.basicConfig(level=logging.INFO)
     app_init()
     spec = importlib.util.spec_from_file_location("model", st.session_state["config"]["sampling_model"]["path"])
     model_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(model_module)
     st.session_state["sampling_model"] = model_module.load_model()
+    try:
+        st.session_state["committee"] = model_module.CommitteeLoader.get_committee()
+        st.session_state["committee_info"] = model_module.CommitteeLoader.models_info()
+        st.session_state["samplings"].append("Committee")
+    except:
+        logging.info("Failed to load committee")
+        st.session_state["committee"] = None
+        st.session_state["committee_info"] = None
     st.session_state["initialised"] = True
 
 st.session_state["dataset_count_above_main_plot"].write(
@@ -166,37 +162,56 @@ st.session_state["dataset_count_above_main_plot"].write(
     f"val dataset size is {st.session_state.X_val.shape[0]}, "
     f"pool dataset size is {st.session_state.X_pool.shape[0]}")
 
-sampling_choice = st.session_state["sampling_type_choice"].radio("Choose sampling strategy:", samplings)
+st.session_state["current_sampling_choice"] = st.session_state["sampling_type_choice"].radio(
+    "Choose sampling strategy:", st.session_state["samplings"])
 number_to_sample = st.session_state["sampling_number_of_samples_choice"] \
-    .select_slider("Select number of samples:", sampling_number_of_samples_variants)
+    .select_slider("Select number of samples:", st.session_state["sampling_number_of_samples_variants"])
 number_of_samples_to_show_in_df = st.session_state["sampling_result_dataframe_column_slider"] \
     .slider("Number of samples to show in table:", min_value=0,
-            max_value=sampling_max_number_of_samples_to_show, value=50)
+            max_value=st.session_state["sampling_max_number_of_samples_to_show"], value=50)
 
 with st.session_state["main_plot"]:
-    X, y = umap_data(st.session_state["X_train"], st.session_state["y_train"], n_neighbours, min_dist, verbose=False)
+    X, y = umap_data(st.session_state["X_train"], st.session_state["y_train"], st.session_state["n_neighbours"],
+                     st.session_state["min_dist"], verbose=False)
     id_to_counts, id_to_centers, classes = class_mass_centers(X, y)
     plot = plot_dataset(id_to_centers, id_to_counts, classes, st.session_state["le_train"])
     st.write(plot)
 
 skip_vis = st.session_state["sampling_skip_vis_checkbox"].checkbox('Sample and add to dataset, skip visualisation')
 
+if st.session_state["current_sampling_choice"] == "Committee":
+    st.session_state["committee_info_textbox"].write(
+        "Current committee members: \n {}".format(
+            "\n".join("- {}".format(info) for info in st.session_state["committee_info"]))
+
+    )
+
 if st.session_state["sampling_button"].button("Sample 'em all!"):
     st.session_state["main_plot"].write("Training the model, sampling...")
-
-    learner = ActiveLearner(
-        estimator=st.session_state["sampling_model"],
-        query_strategy=sampling_funcs[samplings.index(sampling_choice)]
-    )
+    if st.session_state["current_sampling_choice"] == "Committee":
+        learner = st.session_state["committee"]
+    else:
+        st.session_state["committee_info_textbox"].write("")
+        learner = ActiveLearner(
+            estimator=st.session_state["sampling_model"],
+            query_strategy=st.session_state["sampling_funcs"][
+                st.session_state["samplings"].index(st.session_state["current_sampling_choice"])]
+        )
     learner._add_training_data(st.session_state["X_train"], st.session_state["y_train"])
-    cached_train(learner.estimator, st.session_state["X_train"], st.session_state["y_train"])
+    if st.session_state["current_sampling_choice"] == "Committee":
+        for i, member in enumerate(learner.learner_list):
+            member.estimator = cached_train(member.estimator, st.session_state["X_train"], st.session_state["y_train"],
+                         cache_keyword=f"{str(i)}_committee_training")
+    else:
+        learner.estimator = cached_train(learner.estimator, st.session_state["X_train"], st.session_state["y_train"])
+
     query_idx, query_inst = learner.query(st.session_state["X_pool"], n_instances=number_to_sample)
     X_train_new = st.session_state["X_pool"][query_idx]
     y_train_new = np.full(query_idx.shape[0], len(st.session_state["le_train"]))
     if not skip_vis:
         X, y = umap_data(np.append(st.session_state["X_train"], X_train_new, axis=0),
-                         np.append(st.session_state["y_train"], y_train_new, axis=0), n_neighbours,
-                         min_dist, verbose=False, cache_keyword="display_umaped_cache_sampling")
+                         np.append(st.session_state["y_train"], y_train_new, axis=0), st.session_state["n_neighbours"],
+                         st.session_state["min_dist"], verbose=False, cache_keyword="display_umaped_cache_sampling")
         X_train_new, y_train_new = X[st.session_state["X_train"].shape[0]:], y[st.session_state["y_train"].shape[0]:]
         id_to_counts, id_to_centers, classes = class_mass_centers(X[:st.session_state["X_train"].shape[0]],
                                                                   y[:st.session_state["y_train"].shape[0]])

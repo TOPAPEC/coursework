@@ -1,5 +1,5 @@
 sampling_model:
-  path: "InteractiveDependencies/model.py"
+  path: "InteractiveDependencies/model_initializer.py"
 #comitee_models:
 datasets:
 #  Пока что пул не должен встречать лейблов, отличных от трейна.
