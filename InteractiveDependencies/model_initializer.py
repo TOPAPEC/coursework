@@ -18,7 +18,7 @@ class CommitteeLoader(CommitteeWrap):
     @staticmethod
     def get_committee(**kwargs) -> Committee:
         learners = [
-            ActiveLearner(TorchClassifierWrap(LogReg(), 100, 300, 500, verbose=False)), ActiveLearner(LinearSVC())
+            ActiveLearner(TorchClassifierWrap(LogReg(300, 1013), 100, 300, 100)), ActiveLearner(LinearSVC())
         ]
         return Committee(
             learner_list=learners,
@@ -27,4 +27,4 @@ class CommitteeLoader(CommitteeWrap):
 
 
 def load_model():
-    return TorchClassifierWrap(LogReg(), 100, 300, 500, verbose=False)
+    return TorchClassifierWrap(LogReg(300, 1013), 100, 300, 100)

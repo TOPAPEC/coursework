@@ -43,6 +43,7 @@ pd.set_option('display.max_colwidth', None)
 def app_init():
     dataset_types = ["train", "val", "pool"]
     is_labeled = [True, True, False]
+    st.session_state["class_count"] = st.session_state["config"]["datasets"]["class_count"]
     for dataset_type, is_labeled in zip(dataset_types, is_labeled):
         with open(st.session_state["config"]["datasets"][f"{dataset_type}_path"], "rb") as dataset_file:
             dataset, X = pickle.load(dataset_file)

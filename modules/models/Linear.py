@@ -2,10 +2,10 @@ import torch.nn as nn
 
 
 class LogReg(nn.Module):
-    def __init__(self):
+    def __init__(self, input_dim, output_dim):
         super().__init__()
         self.seq = nn.Sequential(
-            nn.Linear(300, 1013),
+            nn.Linear(input_dim, output_dim),
             nn.LogSoftmax(dim=1)
         )
 

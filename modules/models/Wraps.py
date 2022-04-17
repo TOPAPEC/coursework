@@ -50,7 +50,7 @@ class TorchClassifierWrap(ModelWrap, BaseEstimator):
         criterion = nn.NLLLoss()
         dataset = TensorDataset(X, y)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0)
-        for epoch in tqdm(range(self.iter)):
+        for epoch in tqdm(range(self.iter), disable=not self.verbose):
             for bX, by in dataloader:
                 bX = bX.view(-1, self.input_dimension)
                 bX = bX.cuda()
